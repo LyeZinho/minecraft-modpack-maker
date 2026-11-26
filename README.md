@@ -24,6 +24,17 @@ pip install -e .
 python -m modpack_fixer --help
 ```
 
+## Testes
+
+```bash
+pip install -e ".[dev]"
+python -m pytest --cov=modpack_fixer --cov-report=term-missing
+```
+
+Suite cobre solver, lockfile, export, metadata (cliente Modrinth), busca
+unificada, DDG scraping e a CLI — sem chamadas de rede reais (cliente
+Modrinth é substituído por um dublê em memória nos testes).
+
 ## Uso (Fase 1)
 
 ### 0) Buscar mods (quando você não conhece o slug exato)

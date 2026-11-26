@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import time
+import urllib.parse
 import urllib.request
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -70,15 +71,19 @@ class ModrinthClient:
     ) -> List[Dict[str, Any]]:
         """Lista versões de um projeto, filtradas por versão do jogo e loader.
 
+        A API da Modrinth espera `game_versions` e `loaders` como arrays
+        JSON codificados em URL (ex: game_versions=["1.20.1"]), não como
+        strings soltas — passar a string crua faz a API ignorar o filtro
+        silenciosamente e devolver todas as versões do projeto.
         A API já retorna ordenada (mais recente primeiro na prática), o que
         mantém o solver determinístico.
         """
-        params: List[str] = []
+        params: Dict[str, str] = {}
         if game_version:
-            params.append(f"game_versions={game_version}")
+            params["game_versions"] = json.dumps([game_version])
         if loader:
-            params.append(f"loaders={loader}")
-        query = "&".join(params)
+            params["loaders"] = json.dumps([loader])
+        query = urllib.parse.urlencode(params)
         path = f"/project/{slug}/version" + (f"?{query}" if query else "")
         return self._get(path)
 

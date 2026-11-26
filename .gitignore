@@ -3,3 +3,7 @@ __pycache__/
 *.mrpack
 pack*/**
 .env
+.venv/
+*.egg-info/
+.coverage
+.pytest_cache/

@@ -85,7 +85,11 @@ def load_lockfile(path: Path) -> Lockfile:
         )
 
     deps = data.get("dependencies", {}) or {}
-    loader = deps.get("forge") or deps.get("fabric") or deps.get("quilt") or deps.get("neoforge") or ""
+    loader = ""
+    for candidate in ("forge", "fabric", "quilt", "neoforge"):
+        if candidate in deps:
+            loader = candidate
+            break
 
     return Lockfile(
         format_version=data.get("formatVersion", 1),
@@ -94,5 +98,6 @@ def load_lockfile(path: Path) -> Lockfile:
         game=data.get("game", "minecraft"),
         game_version=deps.get("minecraft", ""),
         loader=loader,
+        loader_version=(deps.get(loader) or None) if loader else None,
         mods=mods,
     )

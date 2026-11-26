@@ -64,6 +64,15 @@ class Solver:
             raw_versions = self.client.list_versions(
                 slug, game_version=game_version, loader=loader
             )
+            # Defesa extra: o solver é a fonte de verdade de compatibilidade,
+            # então nunca confia cegamente no filtro da API — reforça aqui
+            # caso o endpoint remoto ignore os parâmetros (já aconteceu).
+            raw_versions = [
+                v
+                for v in raw_versions
+                if game_version in v.get("game_versions", [])
+                and loader in v.get("loaders", [])
+            ]
             if not raw_versions:
                 raise SolverError(
                     f"Nenhuma versão compatível para '{slug}' em "

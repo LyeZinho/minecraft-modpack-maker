@@ -8,7 +8,10 @@ version = "0.1.0"
 description = "Solver determinístico + lockfile para modpacks Minecraft (Modrinth / CurseForge)"
 requires-python = ">=3.9"
 readme = "README.md"
-requires = []
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pytest-cov>=4.0"]
 
 [project.scripts]
 mpfix = "modpack_fixer.cli:main"
@@ -16,3 +19,9 @@ mpfix = "modpack_fixer.cli:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["modpack_fixer*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["modpack_fixer"]
