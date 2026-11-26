@@ -23,8 +23,39 @@ _STOPWORDS = {
 }
 
 
+_LOADER_NAMES = {"forge", "fabric", "quilt", "neoforge"}
+_VERSION_RE = re.compile(r"^\d+(\.\d+){1,3}[a-z0-9\-.]*$", re.IGNORECASE)
+
+
 def _query_words(query: str) -> List[str]:
     return [w.lower() for w in re.findall(r"[a-zA-ZÀ-ÿ0-9]+", query) if w.lower() not in _STOPWORDS]
+
+
+def _strip_facet_tokens(query: str, game_version: Optional[str], loader: Optional[str]) -> str:
+    """Remove da query de texto os tokens já cobertos pelos facets (game_version/loader).
+
+    A API de busca da Modrinth usa relevância textual: incluir literalmente
+    "1.20.1" ou "fabric" no texto livre, quando esses dados já são aplicados
+    como facet estruturado, costuma derrubar a pontuação de relevância a
+    ponto de a busca não retornar nada (ex: "jei fabric 1.20.1" -> 0 hits,
+    mas "jei" com os mesmos facets -> hits normais). Removemos esses tokens
+    redundantes do texto, mantendo apenas o restante da intenção do usuário.
+    """
+    tokens = query.split()
+    kept = []
+    for tok in tokens:
+        bare = re.sub(r"[^\w.\-]", "", tok).lower()
+        if loader and bare == loader.lower():
+            continue
+        if not loader and bare in _LOADER_NAMES:
+            continue
+        if game_version and bare == game_version.lower():
+            continue
+        if _VERSION_RE.match(bare):
+            continue
+        kept.append(tok)
+    stripped = " ".join(kept).strip()
+    return stripped or query
 
 
 def _score(result: SearchResult, words: List[str]) -> float:
@@ -58,12 +89,19 @@ def unified_search(
     retornados — a busca nunca retorna vazio por causa de um único provedor.
     """
     words = _query_words(query)
+    modrinth_query = _strip_facet_tokens(query, game_version, loader)
 
     modrinth_results: List[SearchResult] = []
     try:
         modrinth_results = client.search_projects(
-            query, limit=limit, game_version=game_version, loader=loader
+            modrinth_query, limit=limit, game_version=game_version, loader=loader
         )
+        if not modrinth_results and modrinth_query != query:
+            # Fallback: tenta a query original caso a limpeza tenha removido
+            # demais (ex: nome do mod coincide com um loader/versão).
+            modrinth_results = client.search_projects(
+                query, limit=limit, game_version=game_version, loader=loader
+            )
     except Exception:
         # Falha na Modrinth: seguimos com apenas DuckDuckGo
         modrinth_results = []

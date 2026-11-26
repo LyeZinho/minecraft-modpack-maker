@@ -9,17 +9,19 @@ from __future__ import annotations
 import json
 import zipfile
 from pathlib import Path
+from typing import Union
 
 from .lockfile import lockfile_to_index
+from .models import Lockfile
 
 
-def export_mrpack(lock: Any, output: Path) -> Path:
+def export_mrpack(lock: Union[Lockfile, str, Path], output: Path) -> Path:
     """Gera um .mrpack a partir de um Lockfile (objeto ou caminho para JSON)."""
     output.parent.mkdir(parents=True, exist_ok=True)
 
-    if hasattr(lock, "name"):  # é um objeto Lockfile
+    if isinstance(lock, Lockfile):
         index_data = lockfile_to_index(lock)
-    else:  # é caminho para JSON já salvo
+    else:  # é caminho (str ou Path) para JSON já salvo
         index_data = json.loads(Path(lock).read_text(encoding="utf-8"))
 
     with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as zf:
